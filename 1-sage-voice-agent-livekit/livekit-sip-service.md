@@ -212,13 +212,15 @@ uv run python setup_sip.py trunk <phone-number>    # create the inbound trunk
 
 ---
 
-### Doing the same steps in the control app
+### Doing the same steps in the control panel
 
-Once the control app is deployed (see the repo README), you can do the same steps from a browser instead of the script. Sign in with the control app's username and password.
+Once the control panel is deployed (see the repo README), you can do the same steps from a browser instead of the script. Sign in with the control panel's username and password.
 
 **Create the dispatch rule**
 1. Open **Dispatch rules** in the top menu.
-2. Under **Add a rule**, enter a name such as `sage-calls`, and keep the room prefix as `call-`.
+2. Under **Add a rule**, enter a name such as `sage-calls` and keep the room prefix as `call-`.
+   - **Agents to dispatch:** enter `sage`. Add more names separated by commas to bring several agents into each call's room.
+   - **Trunks this rule applies to:** tick the trunk this rule should serve. Leave all unticked only if the rule should apply to every trunk.
 3. Click **Create rule**.
 4. Check the **Existing rules** table. It should show the rule with `sage` in the Agents column.
 
@@ -230,7 +232,7 @@ Once the control app is deployed (see the repo README), you can do the same step
 
 **Check the result**
 - The **Overview** page lists every trunk and dispatch rule from the LiveKit server. Both should appear there.
-- If the page shows "could not reach the LiveKit server," check the control app's `LIVEKIT_URL` and key pair.
+- If the page shows "could not reach the LiveKit server," check the control panel's `LIVEKIT_URL` and key pair.
 
 **Deleting**
 - On the **Trunks** or **Dispatch rules** page, click **Delete** on the row and confirm. Delete the test trunk when you're done testing.

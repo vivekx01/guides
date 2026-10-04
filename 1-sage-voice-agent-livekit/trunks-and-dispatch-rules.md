@@ -130,6 +130,77 @@ LiveKit won't create a second rule that matches the same trunk, number, and PIN 
 
 ---
 
+## Part 4a: Several numbers and several agents
+
+This is the part people most often forget. Here's how a dispatch rule decides which calls it handles.
+
+### A rule doesn't know about phone numbers
+
+A dispatch rule never matches on a phone number directly. It matches on **trunks**. Each trunk holds one or more numbers, so a rule that's attached to a trunk handles the calls that trunk accepts.
+
+### A rule with no trunk applies to every trunk
+
+If a rule doesn't name a trunk, it applies to **all** inbound trunks. Every accepted call goes to that rule's agent, no matter which number was dialed.
+
+This is what happens with one number and one agent, and it's fine. It becomes a problem as soon as you add a second number or a second agent, because calls to both numbers go to the same agent.
+
+### Attaching a rule to a trunk
+
+To send a number's calls to a specific agent, the rule has to name its trunk. The API has two fields for this:
+
+| Field | What it does |
+|---|---|
+| `trunk_ids` | The list of trunks this rule applies to. Empty means all trunks. |
+| `inbound_numbers` | Limits the rule to specific numbers. Use it when you don't want a separate trunk per number. |
+
+For a separate trunk per number, use `trunk_ids`.
+
+### One number, one trunk, one rule, one agent
+
+| Number | Trunk | Rule | Agent |
+|---|---|---|---|
+| `<number-a>` | `<trunk-a>` | `<rule-a>` with `trunk_ids = [<trunk-a>]` | `<agent-a>` |
+| `<number-b>` | `<trunk-b>` | `<rule-b>` with `trunk_ids = [<trunk-b>]` | `<agent-b>` |
+
+**How a call is routed:**
+1. The number is matched to a trunk.
+2. LiveKit looks only at the rules attached to that trunk.
+3. The matching rule's agent joins the room.
+
+### Two rules can share a room prefix
+
+LiveKit only blocks a rule when another rule has the same trunk, number, and PIN. The name and prefix don't count. So `<rule-a>` and `<rule-b>` can both use `call-`, because they belong to different trunks.
+
+If you create two rules on the same trunk with the same prefix, LiveKit rejects the second one. That's the "already exists" error from earlier.
+
+### Each agent must be running as its own worker
+
+Each agent is a separate program with its own `agent_name`. Before a call arrives, that agent's worker has to be running and registered with the LiveKit server. A dispatch rule can only send calls to an agent that's connected.
+
+If you run two agents from the same code, give each one a different `agent_name`. Otherwise both register under the same name and calls can go to either one.
+
+### Checklist for adding a second number and agent
+
+1. Start the second agent as its own worker, with its own `agent_name`, and confirm it registers.
+2. Create the second trunk with the new number.
+3. Create the second rule, with `trunk_ids` set to the new trunk.
+4. Confirm the first rule still has `trunk_ids` set to the first trunk.
+5. Place a test call to each number, and check that each reaches the right agent.
+
+### Watch out for rules with no trunk
+
+If one rule has no trunk while another rule is attached to a specific trunk, the rule with no trunk also applies to that trunk. That can send the same call to two agents. Attach every rule to a trunk once you have more than one.
+
+### Tool support
+
+All three tools now support trunk selection:
+
+- **Control panel, Dispatch rules page:** tick one or more trunks when creating a rule. Leave all unticked to apply the rule to every trunk. Each rule's table row shows which trunks it uses, and the Edit page changes them.
+- **Setup script:** `setup_sip.py dispatch --trunk <trunk-id> --agent sage,sage2` attaches the rule to one trunk and dispatches the listed agents. Without `--trunk`, the rule applies to every trunk. Without `--agent`, it dispatches `sage`.
+- **SDK:** set `trunk_ids` on `CreateSIPDispatchRuleRequest`, as shown in Part 5, Option C.
+
+Trunk and rule edits in the control panel use LiveKit's list operations. Some operations are rejected by the server, so the app sends only the changes it needs, and it skips empty updates.
+
 ## Part 5: Creating the trunk and rule
 
 You can create them in three ways. They all make the same calls to the LiveKit server.
@@ -148,10 +219,10 @@ Set `SIP_ALLOWED_ADDRESSES` in `.env` before creating the trunk, to restrict whi
 
 The script doesn't set credentials yet. If your provider needs them, use Option B or C.
 
-### Option B: the control app (browser)
+### Option B: the control panel (browser)
 
-1. Sign in to the control app.
-2. Open **Dispatch rules**, enter a name and a room prefix, and click **Create rule**.
+1. Sign in to the control panel.
+2. Open **Dispatch rules**, enter a name, a room prefix, and the agents to dispatch (comma-separated), tick the trunks it applies to, and click **Create rule**. Leave every trunk unticked only for a rule that should cover all trunks.
 3. Open **Trunks**, enter a name, the phone number, and the allowed addresses, and click **Create trunk**.
 4. Check the **Overview** page, which lists every trunk and rule from the LiveKit server.
 
@@ -218,6 +289,35 @@ Create them with `lk sip inbound create <file>` and `lk sip dispatch create <fil
 
 ---
 
+## Part 5a: Agents and their settings
+
+An agent name in a dispatch rule has to match the name the agent registers with. The control panel keeps settings for each agent under that name, so the same panel can configure several agents.
+
+**Where it lives in the control panel**
+
+- **Agents page:** lists every agent that has settings, and creates new ones. Creating an agent here saves default settings under its name. It doesn't start the agent.
+- **Settings page:** at `/agents/<agent-name>/settings`. Each agent has its own greeting, instructions, language model, speech-to-text model, and voice.
+
+**How an agent uses its settings**
+
+When a call starts, the agent asks the control panel for its settings with its own name:
+
+```
+GET https://<control-domain>/api/internal/agents/<agent-name>/settings
+Authorization: Bearer <INTERNAL_TOKEN>
+```
+
+If an agent has no saved settings, the control panel returns the defaults and logs a warning, so calls still work.
+
+**Keeping names consistent**
+
+Three names have to match exactly:
+1. The `agent_name` in the agent's code (`@server.rtc_session(agent_name=...)`).
+2. The agent name in the dispatch rule.
+3. The name on the control panel's Agents page.
+
+A mismatch in any one of them means the agent doesn't join, or joins with defaults.
+
 ## Part 6: Provider setup
 
 The provider must send calls to your server. Set this up on the provider's website, using your `<sip-domain>`.
@@ -254,7 +354,7 @@ This route sends a username and password with each call.
    </Response>
    ```
 2. In **Phone Numbers**, set the number's voice configuration to use this TwiML Bin.
-3. In LiveKit, the inbound trunk must have the same username and password. **Our tooling doesn't set these yet.** Use the SDK's `auth_username` and `auth_password` fields, or add them to the control app.
+3. In LiveKit, the inbound trunk must have the same username and password. **Our tooling doesn't set these yet.** Use the SDK's `auth_username` and `auth_password` fields, or add them to the control panel.
 
 Twilio's TwiML route doesn't support outbound calls or call transfers. Use Route 1 if you need them.
 
@@ -282,7 +382,7 @@ Indian phone numbers usually need the provider to register your business first, 
 
 ## Part 7: Test end to end
 
-1. **Check the server side.** Run `setup_sip.py list`, or open the control app's Overview. Both the trunk and the dispatch rule should appear.
+1. **Check the server side.** Run `setup_sip.py list`, or open the control panel's Overview. Both the trunk and the dispatch rule should appear.
 2. **Start the agent.** Run `uv run python sage.py dev` locally, or confirm the VPS copy shows `registered worker`.
 3. **Place a call** from a phone to the provider number, or from a softphone to the SIP address.
 4. **Watch the SIP service logs.** You should see the call accepted and a participant join a room.
@@ -303,7 +403,7 @@ Indian phone numbers usually need the provider to register your business first, 
 | Calls connect but there's no audio | The media ports (10000–10100 UDP) are blocked | Check the port mapping and the firewall |
 | The agent joins but ignores the caller | The agent is linked to a different participant | Check the logs for which participant the agent linked to |
 | Changes don't take effect | The call started before the change | Place a new call |
-| The control app shows an error on the Overview | The control app can't reach the LiveKit server | Check `LIVEKIT_URL` and the key pair in the control app |
+| The control panel shows an error on the Overview | The control panel can't reach the LiveKit server | Check `LIVEKIT_URL` and the key pair in the control panel |
 
 ---
 
@@ -318,8 +418,9 @@ Indian phone numbers usually need the provider to register your business first, 
 
 ## Part 10: Known gaps in our setup
 
-- **The setup script and control app don't set credentials** on the trunk. Route 2 for Twilio, and any provider that needs credentials, requires adding those fields.
-- **The control app can't edit trunks yet.** To change a trunk, delete it and create a new one.
+- **The setup script and control panel don't set credentials** on the trunk. Route 2 for Twilio, and any provider that needs credentials, requires adding those fields.
+- **Editing a trunk changes it for new calls only.** Calls already in progress keep their settings.
+- **Only one rule can apply to all trunks for a given number and PIN.** Changing a rule to "all trunks" fails if another rule already covers that case.
 - **Provider steps for Twilio and Telnyx** come from their public documentation and LiveKit's guides. Check the current screens, since providers change them.
 - **Provider IP addresses** for allowed addresses must be confirmed against each provider's current list.
 
