@@ -14,6 +14,7 @@ Every guide uses placeholders in `<angle brackets>` for your own IP, domain, key
 | [livekit-sip-service.md](livekit-sip-service.md) | Running the SIP service, the DNS record, the trunk and dispatch rule, and connecting a phone provider. |
 | [trunks-and-dispatch-rules.md](trunks-and-dispatch-rules.md) | Complete guide to inbound trunks and dispatch rules, with setup options and provider configuration (Twilio, Telnyx). |
 | [livekit-softphone-test.md](livekit-softphone-test.md) | Testing the full call path with a free softphone, without a phone carrier. |
+| [sage-stack.md](sage-stack.md) | The Sage agent, the LiveKit control panel, and the shared Redis instance: how to deploy and configure each one. |
 | [livekit-egress.md](livekit-egress.md) | Recording rooms and tracks with LiveKit Egress: what it does, what it needs, and how we could use it. |
 
 ## Suggested order

@@ -19,6 +19,7 @@ Run a phone-capable AI voice agent on your own server: LiveKit for rooms, a SIP 
 | [Self-hosting LiveKit on Coolify](1-sage-voice-agent-livekit/livekit-self-host-coolify.md) | Installing the LiveKit server on a VPS: swap, keys, ports, and verification. |
 | [LiveKit SIP service](1-sage-voice-agent-livekit/livekit-sip-service.md) | Running the SIP service: the DNS record, the trunk and dispatch rule, and connecting a phone provider. |
 | [Trunks and dispatch rules](1-sage-voice-agent-livekit/trunks-and-dispatch-rules.md) | A complete guide to inbound trunks and dispatch rules, with setup options and provider configuration for Twilio and Telnyx. |
+| [Sage stack](1-sage-voice-agent-livekit/sage-stack.md) | The Sage agent, the LiveKit control panel, and the shared Redis instance: how to deploy and configure each one. |
 | [Softphone test](1-sage-voice-agent-livekit/livekit-softphone-test.md) | Testing the full call path with a free softphone, without a phone carrier. |
 | [Egress](1-sage-voice-agent-livekit/livekit-egress.md) | Recording rooms and tracks with LiveKit Egress. |
 
