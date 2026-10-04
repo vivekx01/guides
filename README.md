@@ -37,4 +37,4 @@ Run a phone-capable AI voice agent on your own server: LiveKit for rooms, a SIP 
 
 - Guides use placeholders in `<angle brackets>` for IPs, domains, keys, and passwords. Never put real values in these files.
 - Commands are shown for Windows PowerShell where noted, with Linux equivalents alongside.
-- Check each provider's and LiveKit's current documentation before relying on a step, since consoles and APIs change.
+- Check the current official documentation before relying on a step, since tools and APIs change.
