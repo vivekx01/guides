@@ -8,7 +8,7 @@ Each topic has its own folder, with a README that lists its guides in reading or
 
 ## Topics
 
-### [Sage voice agent with self-hosted LiveKit](sage-voice-agent-livekit/)
+### 1. [Sage voice agent with self-hosted LiveKit](sage-voice-agent-livekit/)
 
 Run a phone-capable AI voice agent on your own server: LiveKit for rooms, a SIP service for phone calls, and an agent that listens, thinks, and speaks.
 
