@@ -1,7 +1,5 @@
 # Guides
 
----
-
 ## Topics
 
 ### 1. [Sage voice agent with self-hosted LiveKit](1-sage-voice-agent-livekit/)
