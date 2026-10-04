@@ -1,9 +1,5 @@
 # Guides
 
-Step-by-step guides for building and running voice agents on your own infrastructure.
-
-Each topic has its own folder, with a README that lists its guides in reading order.
-
 ---
 
 ## Topics
